@@ -20,5 +20,3 @@ def parse_raw_json_file(str_file_path):
 
 
 parse_raw_json_file(config.Project_CONFIG['review_file_path'])
-
-print 'hello'

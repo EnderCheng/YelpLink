@@ -4,5 +4,3 @@ Project_CONFIG = {
     'user_file_path': 'C:/Users/Cheng/Yelp Dataset/user.json',
     'user_folder_path': 'C:/Users/Cheng/Yelp Dataset/users_review/'
 }
-
-print 'hello'
