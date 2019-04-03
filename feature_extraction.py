@@ -1,0 +1,403 @@
+import os
+import config
+import json
+import re
+from collections import Counter
+from nltk.tokenize import sent_tokenize
+import numpy as np
+import math
+import scipy as sc
+import nltk
+from utils import permutation_bigram
+from utils import permutation_trigram
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+nltk.download('punkt')
+
+
+def read_reviews():
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    files = os.listdir(reviews_path)
+    dict_json_data = []
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r')
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                dict_json_data.append(temp_json_data)
+
+    return dict_json_data
+
+
+def print_reviews(review_list):
+    for x in range(len(review_list)):
+        print review_list[x]
+
+
+def total_number_of_character(text):
+    return len(text)
+
+
+def total_number_of_alpha_character(text):
+    alpha_number = sum(c.isalpha() for c in text)
+    return alpha_number
+
+
+def total_number_of_digit_character(text):
+    digit_number = sum(c.isdigit() for c in text)
+    return digit_number
+
+
+def total_number_of_upper_case_character(text):
+    upper_case_number = sum(1 for c in text if c.isupper())
+    return upper_case_number
+
+
+def total_number_of_space_character(text):
+    space_number = sum(c.isspace() for c in text)
+    return space_number
+
+
+def frequency_of_letters(text):
+    text = text.lower()
+    ret = {}
+    alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
+                'v', 'w', 'x', 'y', 'z']
+    for i in alphabet:
+        ret[i] = 0
+    for i in text:
+        if i in alphabet:
+            ret[i] += 1
+    return ret.values()
+
+
+def total_number_of_words(text):
+    word_counts = len(re.findall(r'\w+', text))
+    return word_counts
+
+
+def average_word_length(text):
+    avg_word_len = total_number_of_alpha_character(text)/total_number_of_words(text)
+    return avg_word_len
+
+
+def total_number_of_short_words(text):
+    short_word_counts = len([word for word in re.findall(r'\w+', text) if len(word) <= 3])
+    return short_word_counts
+
+
+def average_number_of_sentence_character(text):
+    tokens = sent_tokenize(text)
+    return np.average([len(token) for token in tokens])
+
+
+def average_number_of_sentence_word(text):
+    tokens = sent_tokenize(text)
+    return np.average([len(token.split()) for token in tokens])
+
+
+def number_of_unique_words(text):
+    unique_word_counts = Counter(re.findall(r'\w+', text))
+    return len(unique_word_counts)
+
+
+def hapax_legomenon(text):
+    words = re.findall(r'\w+', text)
+    index = 0
+    freq = {key: 0 for key in words}
+    for word in words:
+        freq[word] += 1
+    for word in freq:
+        if freq[word] == 1:
+            index += 1
+    word_num = len(words)
+    val = index / word_num
+    return val
+
+
+def hapax_dislegomenon(text):
+    words = re.findall(r'\w+', text)
+    index = 0
+    freq = {key: 0 for key in words}
+    for word in words:
+        freq[word] += 1
+    for word in freq:
+        if freq[word] == 2:
+            index += 1
+    word_num = len(words)
+    val = index / word_num
+    return val
+
+
+def honor_r_measure(text):
+    words = re.findall(r'\w+', text)
+    index = 0
+    freq = {key: 0 for key in words}
+    for word in words:
+        freq[word] += 1
+    for word in freq:
+        if freq[word] == 1:
+            index += 1
+    word_number = len(words)
+    unique_number = float(len(set(words)))
+    r_value = 100 * math.log(word_number) / max(1,(1 - (index / unique_number)))
+    return r_value
+
+
+def sichel_measure(text):
+    words = re.findall(r'\w+', text)
+    index = 0
+    freq = {key: 0 for key in words}
+    for word in words:
+        freq[word] += 1
+    for word in freq:
+        if freq[word] == 2:
+            index += 1
+    s_value = index / float(len(set(words)))
+    return s_value
+
+
+def brunets_w_measure(text):
+    words = re.findall(r'\w+', text)
+    a = 0.172
+    unique_word_number = float(len(set(words)))
+    word_number = len(words)
+    b_value = (unique_word_number - a) / (math.log10(word_number))
+    return b_value
+
+
+def yule_k_characteristic(text):
+    words = re.findall(r'\w+', text)
+    word_number = len(words)
+    freq = Counter()
+    freq.update(words)
+    index = Counter()
+    index.update(freq.values())
+    m_value = sum([(value * value) * index[value] for key, value in freq.items()])
+    k_value = 10000 * (m_value - word_number) / math.pow(word_number, 2)
+    return k_value
+
+
+def shannon_entropy(text):
+    words = re.findall(r'\w+', text)
+    word_number = len(words)
+    freq = Counter()
+    freq.update(words)
+    temp_array = np.array(list(freq.values()))
+    distribution = 1. * temp_array
+    distribution /= max(1, word_number)
+    sh_value = sc.stats.entropy(distribution, base=2)
+    return sh_value
+
+
+def simpson_index(text):
+    words = re.findall(r'\w+', text)
+    freq = Counter()
+    freq.update(words)
+    word_number = len(words)
+    n = sum([1.0 * i * (i - 1) for i in freq.values()])
+    d_value = 1 - (n / (word_number * (word_number - 1)))
+    return d_value
+
+
+def word_len_freq_dist(text):
+    words = re.findall(r'\w+', text)
+    ret = {}
+    for i in range(1, 21):
+        ret[i] = 0
+    for word in words:
+        if len(word) <= 20:
+            if len(word) in ret:
+                ret[len(word)] += 1
+    return ret.values()
+
+
+def freq_of_puncuation(text):
+    punc = [",", ".", "'", "!", '"', ";", "?", ":", ";"]
+    freq = {key: 0 for key in punc}
+    for i in text:
+        if i in punc:
+            freq[i] += 1
+    return freq.values()
+
+
+def freq_of_func_words(text):
+    functional_words = """a between in nor some upon
+    about both including nothing somebody us
+    above but inside of someone used
+    after by into off something via
+    all can is on such we
+    although cos it once than what
+    am do its one that whatever
+    among down latter onto the when
+    an each less opposite their where
+    and either like or them whether
+    another enough little our these which
+    any every lots outside they while
+    anybody everybody many over this who
+    anyone everyone me own those whoever
+    anything everything more past though whom
+    are few most per through whose
+    around following much plenty till will
+    as for must plus to with
+    at from my regarding toward within
+    be have near same towards without
+    because he need several under worth
+    before her neither she unless would
+    behind him no should unlike yes
+    below i nobody since until you
+    beside if none so up your
+    """
+
+    func_word = functional_words.split()
+    freq = {key: 0 for key in func_word}
+    words = re.findall(r'\w+', text)
+    for word in words:
+        if word in func_word:
+            freq[word] += 1
+    return freq.values()
+
+
+def pos_tag_frequency(text):
+    words = nltk.word_tokenize(text)
+    pos_tags = nltk.pos_tag(words, tagset='universal')
+    tag_set = ['ADJ', 'ADP', 'ADV', 'CONJ', 'DET', 'NOUN', 'NUM', 'PRT', 'PRON', 'VERB', '.', 'X']
+    tags = [tag[1] for tag in pos_tags]
+    return [tags.count(tag) for tag in tag_set]
+
+
+def pos_tag_bigram_frequency(text):
+    ret = {}
+    tokens = nltk.word_tokenize(text)
+    nltk_bigrams = list(nltk.bigrams(tokens))
+    tag_set = ['ADJ', 'ADP', 'ADV', 'CONJ', 'DET', 'NOUN', 'NUM', 'PRT', 'PRON', 'VERB', '.', 'X']
+    bigram_tag_set = permutation_bigram(tag_set)
+
+    for value_0, value_1 in bigram_tag_set:
+        ret[(value_0, value_1)] = 0
+
+    for bigram_0, bigram_1 in nltk_bigrams:
+        type_0 = nltk.pos_tag([bigram_0], tagset='universal')[0][1]
+        type_1 = nltk.pos_tag([bigram_1], tagset='universal')[0][1]
+        for value_0, value_1 in bigram_tag_set:
+            if type_0 == value_0 and type_1 == value_1:
+                ret[(value_0, value_1)] += 1
+                break
+    return ret.values()
+
+
+def pos_tag_trigram_frequency(text):
+    ret = {}
+    tokens = nltk.word_tokenize(text)
+    nltk_trigrams = list(nltk.trigrams(tokens))
+    tag_set = ['ADJ', 'ADP', 'ADV', 'CONJ', 'DET', 'NOUN', 'NUM', 'PRT', 'PRON', 'VERB', '.', 'X']
+    trigram_tag_set = permutation_trigram(tag_set)
+
+    for value_0, value_1, value_2 in trigram_tag_set:
+        ret[(value_0, value_1, value_2)] = 0
+
+    for trigram_0, trigram_1,  trigram_2 in nltk_trigrams:
+        type_0 = nltk.pos_tag([trigram_0], tagset='universal')[0][1]
+        type_1 = nltk.pos_tag([trigram_1], tagset='universal')[0][1]
+        type_2 = nltk.pos_tag([trigram_2], tagset='universal')[0][1]
+        for value_0, value_1, value_2 in trigram_tag_set:
+            if type_0 == value_0 and type_1 == value_1 and type_2 == value_2:
+                ret[(value_0, value_1, value_2)] += 1
+                break
+    return ret.values()
+
+
+def number_of_sentence(text):
+    number_of_sentences = sent_tokenize(text)
+    return len(number_of_sentences)
+
+
+def number_of_paragraph(text):
+    paragraph = 0
+    for idx, word in enumerate(text):
+        if word == '\n' and not text[idx - 1] == '\n':
+            paragraph += 1
+
+    if text[-1] != '\n':  # if the last line is not a new line, count a paragraph.
+        paragraph += 1
+
+    return paragraph
+
+
+def avg_num_of_sentence_of_paragraph(text):
+    paragraphs = list(part for part in text.split('\n') if part != '')
+    total_sentence = 0.0
+    total_paragraph = len(paragraphs)
+    for i in range(0,len(paragraphs)):
+        paragraph = paragraphs[i]
+        number_of_sentences = sent_tokenize(paragraph)
+        total_sentence += len(number_of_sentences)
+    return total_sentence/total_paragraph
+
+
+def avg_num_of_character_of_paragraph(text):
+    paragraphs = list(part for part in text.split('\n') if part != '')
+    total_character = 0.0
+    total_paragraph = len(paragraphs)
+    for i in range(0, len(paragraphs)):
+        paragraph = paragraphs[i]
+        number_of_character = len(paragraph)
+        total_character += number_of_character
+    return total_character / total_paragraph
+
+
+def avg_num_of_word_of_paragraph(text):
+    paragraphs = list(part for part in text.split('\n') if part != '')
+    total_word = 0.0
+    total_paragraph = len(paragraphs)
+    for i in range(0, len(paragraphs)):
+        paragraph = paragraphs[i]
+        number_of_word = len(re.findall(r'\w+', paragraph))
+        total_word += number_of_word
+    return total_word / total_paragraph
+
+
+def feature_extract(text):
+    character_features = [total_number_of_character(text)] + [total_number_of_alpha_character(text)]\
+                         + [total_number_of_digit_character(text)] + [total_number_of_upper_case_character(text)]\
+                         + [total_number_of_space_character(text)] + frequency_of_letters(text)
+
+    word_features = [total_number_of_words(text)] + [average_word_length(text)]\
+                    + [total_number_of_short_words(text)]\
+                    + [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)]\
+                    + [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)]\
+                    + [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)]\
+                    + [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)]\
+                    + word_len_freq_dist(text)
+
+    synatic_features = freq_of_puncuation(text) + freq_of_func_words(text) + pos_tag_frequency(text)\
+                       + pos_tag_bigram_frequency(text) + pos_tag_trigram_frequency(text)
+
+    structure_features = [number_of_sentence(text)] + [number_of_paragraph(text)]\
+                         + [avg_num_of_sentence_of_paragraph(text)] + [avg_num_of_character_of_paragraph(text)]\
+                         + [avg_num_of_word_of_paragraph(text)]
+
+    return character_features + word_features + synatic_features + structure_features
+
+
+if __name__ == "__main__":
+    reviews = read_reviews()
+    features = {}
+    all_features = []
+    for review_idx in range(0, len(reviews)):
+        review_id = reviews[review_idx]['review_id']
+        review_text = reviews[review_idx]['text']
+        features[review_id] = feature_extract(review_text)
+        all_features.append(features[review_id])
+    feature_array = np.array(all_features)
+
+    x_scalar = StandardScaler()
+    x = x_scalar.fit_transform(feature_array)
+
+    # pca = PCA(n_components=0.99)
+    # components = pca.fit_transform(x)
+    kmeans = KMeans(n_clusters=5, n_jobs=-1)
+    kmeans.fit_transform(x)
+    print("labels: ", kmeans.labels_)
+    # print_reviews(reviews)
