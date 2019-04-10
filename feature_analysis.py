@@ -44,8 +44,8 @@ def location_analysis():
     state_values = []
     distance_values = []
     city_distance_values = []
-    files = os.listdir(reviews_path)
     b_data = read_business_info()
+    files = os.listdir(reviews_path)
     for user_file in files:
         if not os.path.isdir(user_file):
             file_json_data = open(reviews_path + user_file, 'r')
@@ -109,15 +109,73 @@ def location_analysis():
 
     print city_values
     print state_values
-    print distance_values
-    print city_distance_values
+    print distance_values # business distance
+    print city_distance_values # business distance in the same city
+
+
+def category_analysis():
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    cate_values = []
+    min_cate_values = []
+    max_score_values = []
+    min_score_values = []
+    b_data = read_business_info()
+    files = os.listdir(reviews_path)
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            cate_stat = {}
+            min_categories = []
+            avg_score_stat = 0
+            avg_min_score_stat = 0
+            file_json_data = open(reviews_path + user_file, 'r')
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                b_id = temp_json_data['business_id']
+                b_info = b_data[b_id]
+                if b_info['categories'] is not None:
+                    categories = b_info['categories'].split(',')
+                    for cate in categories:
+                        if cate not in cate_stat:
+                            cate_stat[cate] = 1
+                        else:
+                            cate_stat[cate] += 1
+
+            max_num = cate_stat[max(cate_stat, key=cate_stat.get)]
+            cate_num = sum(cate_stat.values())
+            cate_values.append(max_num * 1.00 / cate_num)
+
+            for cate in cate_stat:
+                if cate_stat[cate] == 1:
+                    min_categories.append(cate)
+            min_cate_num = len(min_categories)
+            min_cate_values.append(min_cate_num * 1.00/cate_num)
+
+            file_json_data = open(reviews_path + user_file, 'r')
+            cate_name = max(cate_stat, key=cate_stat.get)
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                b_id = temp_json_data['business_id']
+                b_info = b_data[b_id]
+                if b_info['categories'] is not None:
+                    categories = b_info['categories'].split(',')
+                    score = temp_json_data['stars']
+                    if cate_name in categories:
+                        avg_score_stat += score
+                    elif len(list(set(min_categories) & set(categories))) >= 1:
+                        avg_min_score_stat += score
+            avg_score_stat = avg_score_stat*1.00/max_num
+            avg_min_score_stat = avg_min_score_stat*1.00/min_cate_num
+            max_score_values.append(avg_score_stat)
+            min_score_values.append(avg_min_score_stat)
+    print cate_values
+    print min_cate_values
+    print max_score_values
+    print min_score_values
 
 
 if __name__ == "__main__":
     # print average_review_length_per_user(1000)
     # print average_review_word_length()
     # print location_of_business('KWywu2tTEPWmR9JnBc0WyQ')
-    location_analysis()
-
-
-
+    # location_analysis()
+    category_analysis()
