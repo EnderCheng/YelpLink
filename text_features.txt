@@ -8,6 +8,5 @@ Stylometric Model (Content-free)
 
 4. Structural: total number of sentences, total number of paragraphs, average number of sentences per paragraph, average number of characters per paragraph, average number of words per paragraph
 
-
 Bag-of-words Model
 
