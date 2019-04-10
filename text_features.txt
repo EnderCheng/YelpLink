@@ -4,10 +4,10 @@ Stylometric Model (Content-free)
 
 2. Word-level: total number of words, average word length, total number of short words (less than four characters), average sentence length in terms of character, average sentence length in terms of word, number of total different words, vocabulary richness (8), word length frequency distribution (1-20).
 
-3. Syntactic: frequency of punctuations (",", ".", "'", "!", '"', ";", "?", ":", ";"), frequency of function words, POS tags
+3. Syntactic: frequency of punctuations (",", ".", "'", "!", '"', ";", "?", ":", ";"), frequency of function words, POS tags, POS bigram tags, POS trigram tags
 
 4. Structural: total number of sentences, total number of paragraphs, average number of sentences per paragraph, average number of characters per paragraph, average number of words per paragraph
 
-Bag-of-words Model
 
+Bag-of-words Model
 
