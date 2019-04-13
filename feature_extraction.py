@@ -13,6 +13,9 @@ from utils import permutation_trigram
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
+from nltk.corpus import stopwords
+import pickle
+
 nltk.download('punkt')
 
 
@@ -31,8 +34,8 @@ def read_reviews():
 
 
 def print_reviews(review_list):
-    for x in range(len(review_list)):
-        print review_list[x]
+    for xxx in range(len(review_list)):
+        print review_list[xxx]
 
 
 def total_number_of_character(text):
@@ -78,7 +81,7 @@ def total_number_of_words(text):
 
 
 def average_word_length(text):
-    avg_word_len = total_number_of_alpha_character(text)/total_number_of_words(text)
+    avg_word_len = total_number_of_alpha_character(text) / total_number_of_words(text)
     return avg_word_len
 
 
@@ -141,7 +144,7 @@ def honor_r_measure(text):
             index += 1
     word_number = len(words)
     unique_number = float(len(set(words)))
-    r_value = 100 * math.log(word_number) / max(1,(1 - (index / unique_number)))
+    r_value = 100 * math.log(word_number) / max(1, (1 - (index / unique_number)))
     return r_value
 
 
@@ -297,7 +300,7 @@ def pos_tag_trigram_frequency(text):
     for value_0, value_1, value_2 in trigram_tag_set:
         ret[(value_0, value_1, value_2)] = 0
 
-    for trigram_0, trigram_1,  trigram_2 in nltk_trigrams:
+    for trigram_0, trigram_1, trigram_2 in nltk_trigrams:
         type_0 = nltk.pos_tag([trigram_0], tagset='universal')[0][1]
         type_1 = nltk.pos_tag([trigram_1], tagset='universal')[0][1]
         type_2 = nltk.pos_tag([trigram_2], tagset='universal')[0][1]
@@ -329,11 +332,11 @@ def avg_num_of_sentence_of_paragraph(text):
     paragraphs = list(part for part in text.split('\n') if part != '')
     total_sentence = 0.0
     total_paragraph = len(paragraphs)
-    for i in range(0,len(paragraphs)):
+    for i in range(0, len(paragraphs)):
         paragraph = paragraphs[i]
         number_of_sentences = sent_tokenize(paragraph)
         total_sentence += len(number_of_sentences)
-    return total_sentence/total_paragraph
+    return total_sentence / total_paragraph
 
 
 def avg_num_of_character_of_paragraph(text):
@@ -359,45 +362,232 @@ def avg_num_of_word_of_paragraph(text):
 
 
 def feature_extract(text):
-    character_features = [total_number_of_character(text)] + [total_number_of_alpha_character(text)]\
-                         + [total_number_of_digit_character(text)] + [total_number_of_upper_case_character(text)]\
+    character_features = [total_number_of_character(text)] + [total_number_of_alpha_character(text)] \
+                         + [total_number_of_digit_character(text)] + [total_number_of_upper_case_character(text)] \
                          + [total_number_of_space_character(text)] + frequency_of_letters(text)
 
-    word_features = [total_number_of_words(text)] + [average_word_length(text)]\
-                    + [total_number_of_short_words(text)]\
-                    + [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)]\
-                    + [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)]\
-                    + [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)]\
-                    + [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)]\
+    word_features = [total_number_of_words(text)] + [average_word_length(text)] \
+                    + [total_number_of_short_words(text)] \
+                    + [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)] \
+                    + [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)] \
+                    + [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)] \
+                    + [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)] \
                     + word_len_freq_dist(text)
 
-    synatic_features = freq_of_puncuation(text) + freq_of_func_words(text) + pos_tag_frequency(text)\
+    synatic_features = freq_of_puncuation(text) + freq_of_func_words(text) + pos_tag_frequency(text) \
                        + pos_tag_bigram_frequency(text) + pos_tag_trigram_frequency(text)
 
-    structure_features = [number_of_sentence(text)] + [number_of_paragraph(text)]\
-                         + [avg_num_of_sentence_of_paragraph(text)] + [avg_num_of_character_of_paragraph(text)]\
+    structure_features = [number_of_sentence(text)] + [number_of_paragraph(text)] \
+                         + [avg_num_of_sentence_of_paragraph(text)] + [avg_num_of_character_of_paragraph(text)] \
                          + [avg_num_of_word_of_paragraph(text)]
 
     return character_features + word_features + synatic_features + structure_features
 
 
+def word_extraction(sentence):
+    words = re.findall(r'\w+', sentence)
+    return [word.lower() for word in words]
+
+
+def bigram_extraction(sentence):
+    words = word_extraction(sentence)
+    bigrams = list(nltk.bigrams(words))
+    return bigrams
+
+
+def trigram_extraction(sentence):
+    words = word_extraction(sentence)
+    trigrams = list(nltk.trigrams(words))
+    return trigrams
+
+
+def word_features(text):
+    all_sentences = sent_tokenize(text)
+    words = []
+    for sentence in all_sentences:
+        w = word_extraction(sentence)
+        words.extend(w)
+        vocab = list(set(words))
+    return vocab
+
+
+def word_feature_count(vocab_word, text):
+    all_sentences = sent_tokenize(text)
+    words = []
+    bag_vector = {}
+    for sentence in all_sentences:
+        w = word_extraction(sentence)
+        words.extend(w)
+
+    for v in vocab_word:
+        bag_vector[v] = 0
+    for w in words:
+        for i, word in enumerate(vocab_word):
+            if word == w:
+                bag_vector[word] += 1
+    return bag_vector
+
+
+def bigram_features(text):
+    all_sentences = sent_tokenize(text)
+    bigrams = []
+    for sentence in all_sentences:
+        bg = bigram_extraction(sentence)
+        bigrams.extend(bg)
+        vocab = list(set(bigrams))
+    return vocab
+
+
+def bigram_feature_count(vocab_bigram, text):
+    all_sentences = sent_tokenize(text)
+    bigrams = []
+    bag_vector = {}
+    for sentence in all_sentences:
+        bg = bigram_extraction(sentence)
+        bigrams.extend(bg)
+
+    for v in vocab_bigram:
+        bag_vector[v] = 0
+    for bg in bigrams:
+        for i, bigram in enumerate(vocab_bigram):
+            if bigram == bg:
+                bag_vector[bigram] += 1
+    return bag_vector
+
+
+def trigram_features(text):
+    all_sentences = sent_tokenize(text)
+    trigrams = []
+    for sentence in all_sentences:
+        tg = trigram_extraction(sentence)
+        trigrams.extend(tg)
+        vocab = list(set(trigrams))
+    return vocab
+
+
+def trigram_feature_count(vocab_trigram, text):
+    all_sentences = sent_tokenize(text)
+    trigrams = []
+    bag_vector = {}
+    for sentence in all_sentences:
+        tg = trigram_extraction(sentence)
+        trigrams.extend(tg)
+
+    for v in vocab_trigram:
+        bag_vector[v] = 0
+    for tg in trigrams:
+        for i, trigram in enumerate(vocab_trigram):
+            if trigram == tg:
+                bag_vector[trigram] += 1
+    return bag_vector
+
+
+def bag_of_word_features_extract():
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    if not os.path.exists(config.Project_CONFIG['feature_folder_path']):
+        os.makedirs(config.Project_CONFIG['feature_folder_path'])
+    files = os.listdir(reviews_path)
+    comment_text = ''
+    print 'load the reviews'
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r')
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                comment_text += temp_json_data['text']
+    print 'loading finish'
+
+    print 'start extracting word features'
+    temp_feature_w = word_features(comment_text)
+
+    print 'start extracting bigram features'
+    temp_feature_bg = bigram_features(comment_text)
+
+    print 'start extracting unigram features'
+    temp_feature_tg = trigram_features(comment_text)
+
+    feature_w = sorted(temp_feature_w)
+    feature_bg = sorted(temp_feature_bg)
+    feature_tg = sorted(temp_feature_tg)
+
+    with open(feature_path+'word_features', 'wb') as f:
+        pickle.dump(feature_w, f)
+
+    with open(feature_path+'bigram_features', 'wb') as f:
+        pickle.dump(feature_bg, f)
+
+    with open(feature_path+'trigram_features', 'wb') as f:
+        pickle.dump(feature_tg, f)
+
+
+def load_word_features():
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    with open(feature_path + 'word_features', 'rb') as f:
+        feature_w = pickle.load(f)
+        return feature_w
+
+
+def load_bigram_features():
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    with open(feature_path + 'bigram_features', 'rb') as f:
+        feature_bg = pickle.load(f)
+        return feature_bg
+
+
+def load_trigram_features():
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    with open(feature_path + 'trigram_features', 'rb') as f:
+        feature_tg = pickle.load(f)
+        return feature_tg
+
+
+def feature_proportion_word(text, features):
+    feature_pp = []
+    feature_count = word_feature_count(features, text)
+    total_count = sum(feature_count.values())
+    for value in feature_count.values():
+        feature_pp.append(value * 1.00 / total_count)
+    return feature_pp
+
+
+def feature_proportion_bigram(text, features):
+    feature_pp = []
+    feature_count = bigram_feature_count(features, text)
+    total_count = sum(feature_count.values())
+    for value in feature_count.values():
+        feature_pp.append(value * 1.00 / total_count)
+    return feature_pp
+
+
+def feature_proportion_trigram(text, features):
+    feature_pp = []
+    feature_count = trigram_feature_count(features, text)
+    total_count = sum(feature_count.values())
+    for value in feature_count.values():
+        feature_pp.append(value * 1.00 / total_count)
+    return feature_pp
+
+
 if __name__ == "__main__":
     reviews = read_reviews()
-    features = {}
-    all_features = []
-    for review_idx in range(0, len(reviews)):
-        review_id = reviews[review_idx]['review_id']
-        review_text = reviews[review_idx]['text']
-        features[review_id] = feature_extract(review_text)
-        all_features.append(features[review_id])
-    feature_array = np.array(all_features)
-
-    x_scalar = StandardScaler()
-    x = x_scalar.fit_transform(feature_array)
-
+    # features = {}
+    # all_features = []
+    # for review_idx in range(0, len(reviews)):
+    #     review_id = reviews[review_idx]['review_id']
+    #     review_text = reviews[review_idx]['text']
+    #     features[review_id] = feature_extract(review_text)
+    #     all_features.append(features[review_id])
+    # feature_array = np.array(all_features)
+    #
+    # x_scalar = StandardScaler()
+    # x = x_scalar.fit_transform(feature_array)
+    #
     # pca = PCA(n_components=0.99)
     # components = pca.fit_transform(x)
-    kmeans = KMeans(n_clusters=5, n_jobs=-1)
-    kmeans.fit_transform(x)
-    print("labels: ", kmeans.labels_)
+    # kmeans = KMeans(n_clusters=5, n_jobs=-1)
+    # kmeans.fit_transform(x)
+    # print("labels: ", kmeans.labels_)
     # print_reviews(reviews)
+
+
