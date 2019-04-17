@@ -51,6 +51,58 @@ def calc_avg_dist_similarity_score(user_features_prop, user_features_whole_prop)
     return avg_jsd_score, avg_w_score
 
 
+def cal_similarity(all_users_features_whole_prop):
+    user_word_scores = []
+    user_bigram_scores = []
+    user_trigram_scores = []
+    for one_user in all_users_features_whole_prop:
+        agg_word_jsd_score = 0
+        agg_bigram_jsd_score = 0
+        agg_trigram_jsd_score = 0
+        for other_user in all_users_features_whole_prop:
+            if one_user != other_user:
+                word_prop = all_users_features_whole_prop[one_user][one_user]['word']
+                bigram_prop = all_users_features_whole_prop[one_user][one_user]['bigram']
+                trigram_prop = all_users_features_whole_prop[one_user][one_user]['trigram']
+
+                other_word_prop = all_users_features_whole_prop[other_user][one_user]['word']
+                other_bigram_prop = all_users_features_whole_prop[other_user][one_user]['bigram']
+                other_trigram_prop = all_users_features_whole_prop[other_user][one_user]['trigram']
+
+                word_jsd_score = jensenshannon(word_prop, other_word_prop, 2.0)
+                bigram_jsd_score = jensenshannon(bigram_prop, other_bigram_prop, 2.0)
+                trigram_jsd_score = jensenshannon(trigram_prop, other_trigram_prop, 2.0)
+
+                word_prop = all_users_features_whole_prop[other_user][other_user]['word']
+                bigram_prop = all_users_features_whole_prop[other_user][other_user]['bigram']
+                trigram_prop = all_users_features_whole_prop[other_user][other_user]['trigram']
+
+                other_word_prop = all_users_features_whole_prop[one_user][other_user]['word']
+                other_bigram_prop = all_users_features_whole_prop[one_user][other_user]['bigram']
+                other_trigram_prop = all_users_features_whole_prop[one_user][other_user]['trigram']
+
+                word_jsd_score += jensenshannon(word_prop, other_word_prop, 2.0)
+                bigram_jsd_score += jensenshannon(bigram_prop, other_bigram_prop, 2.0)
+                trigram_jsd_score += jensenshannon(trigram_prop, other_trigram_prop, 2.0)
+
+                word_jsd_score = word_jsd_score / 2.00
+                bigram_jsd_score = bigram_jsd_score / 2.00
+                trigram_jsd_score = trigram_jsd_score / 2.00
+
+                agg_word_jsd_score = agg_word_jsd_score + word_jsd_score
+                agg_bigram_jsd_score = agg_bigram_jsd_score + bigram_jsd_score
+                agg_trigram_jsd_score = agg_trigram_jsd_score + trigram_jsd_score
+
+        agg_word_jsd_score = agg_word_jsd_score / (len(all_users_features_whole_prop) - 1)
+        agg_bigram_jsd_score = agg_bigram_jsd_score / (len(all_users_features_whole_prop) - 1)
+        agg_trigram_jsd_score = agg_trigram_jsd_score / (len(all_users_features_whole_prop) - 1)
+
+        user_word_scores.append(agg_word_jsd_score)
+        user_bigram_scores.append(agg_bigram_jsd_score)
+        user_trigram_scores.append(agg_trigram_jsd_score)
+    return user_word_scores, user_bigram_scores, user_trigram_scores
+
+
 def calc_avg_dist_similarity_score_different_users(user_features_prop, all_users_features_whole_prop, index):
     jsd_score = 0
     w_score = 0
@@ -86,4 +138,4 @@ def feature_distance(u, v):
 if __name__ == "__main__":
     # tag_set = ['ADJ', 'ADP', 'ADV', 'CONJ', 'DET', 'NOUN', 'NUM', 'PRT', 'PRON', 'VERB', '.', 'X']
     # print permutation_trigram(tag_set)
-    print all_combination(5)
+    print(all_combination(5))

@@ -6,6 +6,7 @@ import datetime
 from utils import calc_distance
 from utils import calc_avg_dist_similarity_score
 from utils import calc_avg_dist_similarity_score_different_users
+from utils import cal_similarity
 from utils import feature_distance
 from feature_extraction import read_reviews
 from feature_extraction import feature_extract
@@ -16,10 +17,10 @@ from feature_extraction import feature_proportion_word
 from feature_extraction import feature_proportion_bigram
 from feature_extraction import feature_proportion_trigram
 from feature_extraction import bag_of_word_features_extract
+from feature_extraction import bag_of_word_features_extract_user
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import MaxAbsScaler
 import numpy as np
+# from sklearn.preprocessing import StandardScaler
 
 
 def average_review_length_per_user(user_number):
@@ -40,7 +41,7 @@ def average_review_word_length():
 def read_business_info():
     str_file_path = config.Project_CONFIG['business_file_path']
     b_data = {}
-    file_json_data = open(str_file_path, 'r')
+    file_json_data = open(str_file_path, 'r', encoding="utf8")
     for line in enumerate(file_json_data):
         dict_json_data = json.loads(line[1])
         b_info = {}
@@ -59,12 +60,14 @@ def location_analysis():
     city_values = []
     state_values = []
     distance_values = []
+    std_dist_values = []
+    std_dist_city_values = []
     city_distance_values = []
     b_data = read_business_info()
     files = os.listdir(reviews_path)
     for user_file in files:
         if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             city_stat = {}
             state_stat = {}
             points = []
@@ -90,7 +93,7 @@ def location_analysis():
             city_num = sum(city_stat.values())
             city_values.append(max_num * 1.00 / city_num)
 
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             city_name = max(city_stat, key=city_stat.get)
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
@@ -109,24 +112,32 @@ def location_analysis():
             y = [p[1] for p in points]
             centroid = (sum(x) / len(points), sum(y) / len(points))
             distance = 0
+            dist_list = []
             for p in points:
                 distance += calc_distance(centroid[0], centroid[1], p[0], p[1])
+                dist_list.append(calc_distance(centroid[0], centroid[1], p[0], p[1]))
             avg_distance = distance / len(points)
             distance_values.append(avg_distance)
+            std_dist_values.append(np.std(dist_list, ddof=1))
 
             c_x = [c_p[0] for c_p in city_points]
             c_y = [c_p[1] for c_p in city_points]
             c_centroid = (sum(c_x) / len(city_points), sum(c_y) / len(city_points))
             c_distance = 0
+            c_dist_list = []
             for c_p in city_points:
                 c_distance += calc_distance(c_centroid[0], c_centroid[1], c_p[0], c_p[1])
+                c_dist_list.append(calc_distance(c_centroid[0], c_centroid[1], c_p[0], c_p[1]))
             c_avg_distance = c_distance / len(city_points)
             city_distance_values.append(c_avg_distance)
+            std_dist_city_values.append(np.std(c_dist_list, ddof=1))
 
-    print city_values  # the proportion that the business is in the same city
-    print state_values  # the proportion that the business is in the same state
-    print distance_values  # business distance
-    print city_distance_values  # business distance in the same city
+    print(city_values)  # the proportion that the business is in the same city
+    print(state_values)  # the proportion that the business is in the same state
+    print(distance_values)  # business distance
+    print(std_dist_values)  # business distance standard deviation
+    print(city_distance_values)  # business distance in the same city
+    print(std_dist_city_values)  # business distance in the same city standard deviation
 
 
 def category_analysis():
@@ -134,7 +145,9 @@ def category_analysis():
     cate_values = []
     min_cate_values = []
     max_score_values = []
+    std_max_score_values = []
     min_score_values = []
+    std_min_score_values = []
     b_data = read_business_info()
     files = os.listdir(reviews_path)
     for user_file in files:
@@ -143,7 +156,7 @@ def category_analysis():
             min_categories = []
             avg_score_stat = 0
             avg_min_score_stat = 0
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 b_id = temp_json_data['business_id']
@@ -166,8 +179,10 @@ def category_analysis():
             min_cate_num = len(min_categories)
             min_cate_values.append(min_cate_num * 1.00 / cate_num)
 
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             cate_name = max(cate_stat, key=cate_stat.get)
+            score_list = []
+            min_score_list = []
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 b_id = temp_json_data['business_id']
@@ -177,16 +192,22 @@ def category_analysis():
                     score = temp_json_data['stars']
                     if cate_name in categories:
                         avg_score_stat += score
+                        score_list.append(score)
                     elif len(list(set(min_categories) & set(categories))) >= 1:
                         avg_min_score_stat += score
+                        min_score_list.append(score)
+            std_max_score_values.append(np.std(score_list, ddof=1))
+            std_min_score_values.append(np.std(min_score_list, ddof=1))
             avg_score_stat = avg_score_stat * 1.00 / max_num
             avg_min_score_stat = avg_min_score_stat * 1.00 / min_cate_num
             max_score_values.append(avg_score_stat)
             min_score_values.append(avg_min_score_stat)
-    print cate_values  # the proportion that business only appear many times
-    print min_cate_values  # the proportion that business only appear once
-    print max_score_values  # score for the business that appear many times
-    print min_score_values  # score for the business that only appear once
+    print(cate_values)  # the proportion that business only appear many times
+    print(min_cate_values)  # the proportion that business only appear once
+    print(max_score_values)  # score for the business that appear many times
+    print(std_max_score_values)
+    print(min_score_values)  # score for the business that only appear once
+    print(std_min_score_values)
 
 
 def timestamp_analysis():
@@ -198,7 +219,7 @@ def timestamp_analysis():
     for user_file in files:
         if not os.path.isdir(user_file):
             date_stat = []
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 date = datetime.datetime.strptime(temp_json_data['date'], date_time_format)
@@ -214,8 +235,8 @@ def timestamp_analysis():
             date_interval = date_interval * 1.00 / (len(sort_date) - 1)
             date_values.append(date_interval)
             date_div.append(np.std(date_list, ddof=1))
-    print date_values
-    print date_div
+    print(date_values)
+    print(date_div)
 
 
 def stylometry_analysis():
@@ -228,9 +249,10 @@ def stylometry_analysis():
     diff_user_score = []
     review_start = 0
     review_end = 0
+    print('loading data')
     for user_file in files:
         if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 features = feature_extract(temp_json_data['text'])
@@ -238,8 +260,11 @@ def stylometry_analysis():
                 review_end += 1
             all_user_features_num.append([review_start, review_end])
             review_start = review_end
+    print('loading finish')
+    print('scaling data')
     mmscaler = MinMaxScaler()
     scalar_features = mmscaler.fit_transform(all_user_features)
+    print('scaling finish')
     user_list_features = []
     for i in range(0, len(all_user_features_num)):
         user_features = []
@@ -249,6 +274,7 @@ def stylometry_analysis():
             user_features.append(scalar_features[j])
         user_list_features.append(user_features)
     user_list_average_features = []
+    print('same user distance measuring...')
     for k in range(0, len(user_list_features)):
         user_avg_features = np.array(user_list_features[k]).mean(0)
         user_list_average_features.append(user_avg_features)
@@ -258,10 +284,11 @@ def stylometry_analysis():
             temp_similarity_score += feature_distance(user_features, user_avg_features)
         similarity_score = temp_similarity_score / num
         same_user_score.append(similarity_score)
-
+    print('diff user distance measuring...')
     for k in range(0, len(user_list_features)):
         agg_similarity_score = 0
         for i in range(0, len(user_list_average_features)):
+            similarity_score = 0
             if k != i:
                 user_avg_features = user_list_average_features[i]
                 num = len(user_list_features[k])
@@ -273,8 +300,92 @@ def stylometry_analysis():
         avg_similarity_score = agg_similarity_score / (len(user_list_average_features) - 1)
         diff_user_score.append(avg_similarity_score)
 
-    print same_user_score
-    print diff_user_score
+    print(same_user_score)
+    print(diff_user_score)
+
+
+def bag_of_word_analysis_user():
+    print('Loading features')
+    users_features = bag_of_word_features_extract_user()
+    print('Loading Finish')
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    files = os.listdir(reviews_path)
+
+    word_values_same_user = []
+    bigram_values_same_user = []
+    trigram_values_same_user = []
+
+    all_users_features_whole_prop = {}
+    for user_file in files:
+        print('processing ...')
+        user_text = ''
+        filename = user_file.split('.')[0]
+        features_word = users_features[filename]['word']
+        features_bigram = users_features[filename]['bigram']
+        features_trigram = users_features[filename]['trigram']
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+            user_features_word_prop = []
+            user_features_bigram_prop = []
+            user_features_trigram_prop = []
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                user_text += temp_json_data['text']
+                feature_word_prop = feature_proportion_word(temp_json_data['text'], features_word)
+                feature_bigram_prop = feature_proportion_bigram(temp_json_data['text'], features_bigram)
+                feature_trigram_prop = feature_proportion_trigram(temp_json_data['text'], features_trigram)
+
+                user_features_word_prop.append(feature_word_prop)
+                user_features_bigram_prop.append(feature_bigram_prop)
+                user_features_trigram_prop.append(feature_trigram_prop)
+            print('User features proportion...')
+            user_features_whole_word_prop = feature_proportion_word(user_text, features_word)
+            user_features_whole_bigram_prop = feature_proportion_bigram(user_text, features_bigram)
+            user_features_whole_trigram_prop = feature_proportion_trigram(user_text, features_trigram)
+            print('User whole features proportion...')
+
+            # distribution similarity between a users' whole distribution and each review's distribution (average)
+            avg_score_word = calc_avg_dist_similarity_score(user_features_word_prop,
+                                                            user_features_whole_word_prop)
+            avg_score_bigram = calc_avg_dist_similarity_score(user_features_bigram_prop,
+                                                              user_features_whole_bigram_prop)
+            avg_score_trigram = calc_avg_dist_similarity_score(user_features_trigram_prop,
+                                                               user_features_whole_trigram_prop)
+
+            word_values_same_user.append(avg_score_word[0])
+            bigram_values_same_user.append(avg_score_bigram[0])
+            trigram_values_same_user.append(avg_score_trigram[0])
+
+            print('same_user values...')
+            # different users
+            all_users_features_whole_prop[filename] = {}
+            for user_id in users_features:
+                all_users_features_whole_prop[filename][user_id] = {}
+                tmp_features_word = users_features[user_id]['word']
+                tmp_features_bigram = users_features[user_id]['bigram']
+                tmp_features_trigram = users_features[user_id]['trigram']
+
+                all_users_features_whole_prop[filename][user_id]['word'] \
+                    = feature_proportion_word(user_text, tmp_features_word)
+                all_users_features_whole_prop[filename][user_id]['bigram'] \
+                    = feature_proportion_bigram(user_text, tmp_features_bigram)
+                all_users_features_whole_prop[filename][user_id]['trigram'] \
+                    = feature_proportion_trigram(user_text, tmp_features_trigram)
+            print('diff_user values...')
+
+    word_values, bigram_values, trigram_values = cal_similarity(all_users_features_whole_prop)
+
+    # print word_values_same_user
+    # print bigram_values_same_user
+    # print trigram_values_same_user
+    # #
+    # print word_values
+    # print bigram_values
+    # print trigram_values
+
+    print([(x + y + z) / 3 for x, y, z in zip(word_values_same_user, bigram_values_same_user,
+                                              trigram_values_same_user)])
+    print([(x + y + z) / 3 for x, y, z in zip(word_values, bigram_values, trigram_values)])
 
 
 def bag_of_word_analysis():
@@ -313,7 +424,7 @@ def bag_of_word_analysis():
     for user_file in files:
         user_text = ''
         if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             user_features_word_prop = []
             user_features_bigram_prop = []
             user_features_trigram_prop = []
@@ -360,35 +471,44 @@ def bag_of_word_analysis():
     for i in range(0, len(users_list_features_word_prop)):
         avg_score_word = calc_avg_dist_similarity_score_different_users(users_list_features_word_prop[i],
                                                                         all_users_features_whole_word_prop, i)
+        word_values.append(avg_score_word[0])
+        word_values_w.append(avg_score_word[1])
 
     for i in range(0, len(users_list_features_bigram_prop)):
         avg_score_bigram = calc_avg_dist_similarity_score_different_users(users_list_features_bigram_prop[i],
                                                                           all_users_features_whole_bigram_prop, i)
+        bigram_values.append(avg_score_bigram[0])
+        bigram_values_w.append(avg_score_bigram[1])
 
     for i in range(0, len(users_list_features_word_prop)):
         avg_score_trigram = calc_avg_dist_similarity_score_different_users(users_list_features_trigram_prop[i],
                                                                            all_users_features_whole_trigram_prop, i)
-
-        word_values.append(avg_score_word[0])
-        bigram_values.append(avg_score_bigram[0])
         trigram_values.append(avg_score_trigram[0])
-
-        word_values_w.append(avg_score_word[1])
-        bigram_values_w.append(avg_score_bigram[1])
         trigram_values_w.append(avg_score_trigram[1])
 
-    print word_values_same_user
-    print bigram_values_same_user
-    print trigram_values_same_user
+        # word_values.append(avg_score_word[0])
+        # bigram_values.append(avg_score_bigram[0])
+        # trigram_values.append(avg_score_trigram[0])
+        #
+        # word_values_w.append(avg_score_word[1])
+        # bigram_values_w.append(avg_score_bigram[1])
+        # trigram_values_w.append(avg_score_trigram[1])
 
-    print word_values
-    print bigram_values
-    print trigram_values
+    # print word_values_same_user
+    # print bigram_values_same_user
+    # print trigram_values_same_user
+    # #
+    # print word_values
+    # print bigram_values
+    # print trigram_values
+    print([(x + y + z)/3 for x, y, z in zip(word_values_same_user, bigram_values_same_user, trigram_values_same_user)])
+    print([(x + y + z)/3 for x, y, z in zip(word_values, bigram_values, trigram_values)])
 
 
 if __name__ == "__main__":
-    # location_analysis()
-    # category_analysis()
-    # timestamp_analysis()
-    bag_of_word_analysis()
-    # stylometry_analysis()
+    location_analysis()
+    category_analysis()
+    timestamp_analysis()
+    # bag_of_word_analysis()
+    bag_of_word_analysis_user()
+    stylometry_analysis()

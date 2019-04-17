@@ -6,8 +6,8 @@ from collections import Counter
 from nltk.tokenize import sent_tokenize
 import numpy as np
 import math
-import scipy as sc
 import nltk
+import scipy.stats
 from utils import permutation_bigram
 from utils import permutation_trigram
 from sklearn.decomposition import PCA
@@ -25,7 +25,7 @@ def read_reviews():
     dict_json_data = []
     for user_file in files:
         if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 dict_json_data.append(temp_json_data)
@@ -35,7 +35,7 @@ def read_reviews():
 
 def print_reviews(review_list):
     for xxx in range(len(review_list)):
-        print review_list[xxx]
+        print(review_list[xxx])
 
 
 def total_number_of_character(text):
@@ -190,7 +190,7 @@ def shannon_entropy(text):
     temp_array = np.array(list(freq.values()))
     distribution = 1. * temp_array
     distribution /= max(1, word_number)
-    sh_value = sc.stats.entropy(distribution, base=2)
+    sh_value = scipy.stats.entropy(distribution, base=2)
     return sh_value
 
 
@@ -362,26 +362,28 @@ def avg_num_of_word_of_paragraph(text):
 
 
 def feature_extract(text):
-    character_features = [total_number_of_character(text)] + [total_number_of_alpha_character(text)] \
-                         + [total_number_of_digit_character(text)] + [total_number_of_upper_case_character(text)] \
-                         + [total_number_of_space_character(text)] + frequency_of_letters(text)
+    character_features_values = [total_number_of_character(text)] + [total_number_of_alpha_character(text)] \
+                                + [total_number_of_digit_character(text)] \
+                                + [total_number_of_upper_case_character(text)] \
+                                + [total_number_of_space_character(text)] + list(frequency_of_letters(text))
 
-    word_features = [total_number_of_words(text)] + [average_word_length(text)] \
-                    + [total_number_of_short_words(text)] \
-                    + [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)] \
-                    + [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)] \
-                    + [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)] \
-                    + [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)] \
-                    + word_len_freq_dist(text)
+    word_features_values = [total_number_of_words(text)] + [average_word_length(text)] + \
+                           [total_number_of_short_words(text)] + \
+                           [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)] + \
+                           [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)] + \
+                           [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)] + \
+                           [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)] + \
+                           list(word_len_freq_dist(text))
 
-    synatic_features = freq_of_puncuation(text) + freq_of_func_words(text) + pos_tag_frequency(text) \
-                       + pos_tag_bigram_frequency(text) + pos_tag_trigram_frequency(text)
+    synatic_features_values = list(freq_of_puncuation(text)) + list(freq_of_func_words(text)) + \
+                              list(pos_tag_frequency(text)) + \
+                              list(pos_tag_bigram_frequency(text)) + list(pos_tag_trigram_frequency(text))
 
-    structure_features = [number_of_sentence(text)] + [number_of_paragraph(text)] \
-                         + [avg_num_of_sentence_of_paragraph(text)] + [avg_num_of_character_of_paragraph(text)] \
-                         + [avg_num_of_word_of_paragraph(text)]
+    structure_features_values = [number_of_sentence(text)] + [number_of_paragraph(text)] + \
+                                [avg_num_of_sentence_of_paragraph(text)] + [avg_num_of_character_of_paragraph(text)] + \
+                                [avg_num_of_word_of_paragraph(text)]
 
-    return character_features + word_features + synatic_features + structure_features
+    return character_features_values + word_features_values + synatic_features_values + structure_features_values
 
 
 def word_extraction(sentence):
@@ -404,6 +406,7 @@ def trigram_extraction(sentence):
 def word_features(text):
     all_sentences = sent_tokenize(text)
     words = []
+    vocab = []
     for sentence in all_sentences:
         w = word_extraction(sentence)
         words.extend(w)
@@ -430,6 +433,7 @@ def word_feature_count(vocab_word, text):
 
 def bigram_features(text):
     all_sentences = sent_tokenize(text)
+    vocab = []
     bigrams = []
     for sentence in all_sentences:
         bg = bigram_extraction(sentence)
@@ -457,6 +461,7 @@ def bigram_feature_count(vocab_bigram, text):
 
 def trigram_features(text):
     all_sentences = sent_tokenize(text)
+    vocab = []
     trigrams = []
     for sentence in all_sentences:
         tg = trigram_extraction(sentence)
@@ -482,6 +487,28 @@ def trigram_feature_count(vocab_trigram, text):
     return bag_vector
 
 
+def bag_of_word_features_extract_user():
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    files = os.listdir(reviews_path)
+    user_features = {}
+    for user_file in files:
+        comment_text = ''
+        filename = user_file.split('.')[0]
+        user_features[filename] = {}
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                comment_text += temp_json_data['text']
+            temp_feature_w = word_features(comment_text)
+            temp_feature_bigram = bigram_features(comment_text)
+            temp_feature_trigram = trigram_features(comment_text)
+            user_features[filename]['word'] = temp_feature_w
+            user_features[filename]['bigram'] = temp_feature_bigram
+            user_features[filename]['trigram'] = temp_feature_trigram
+    return user_features
+
+
 def bag_of_word_features_extract():
     reviews_path = config.Project_CONFIG['user_folder_path']
     feature_path = config.Project_CONFIG['feature_folder_path']
@@ -489,35 +516,35 @@ def bag_of_word_features_extract():
         os.makedirs(config.Project_CONFIG['feature_folder_path'])
     files = os.listdir(reviews_path)
     comment_text = ''
-    print 'load the reviews'
+    print('load the reviews')
     for user_file in files:
         if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r')
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
                 comment_text += temp_json_data['text']
-    print 'loading finish'
+    print('loading finish')
 
-    print 'start extracting word features'
+    print('start extracting word features')
     temp_feature_w = word_features(comment_text)
 
-    print 'start extracting bigram features'
+    print('start extracting bigram features')
     temp_feature_bg = bigram_features(comment_text)
 
-    print 'start extracting unigram features'
+    print('start extracting unigram features')
     temp_feature_tg = trigram_features(comment_text)
 
     feature_w = sorted(temp_feature_w)
     feature_bg = sorted(temp_feature_bg)
     feature_tg = sorted(temp_feature_tg)
 
-    with open(feature_path+'word_features', 'wb') as f:
+    with open(feature_path + 'word_features', 'wb') as f:
         pickle.dump(feature_w, f)
 
-    with open(feature_path+'bigram_features', 'wb') as f:
+    with open(feature_path + 'bigram_features', 'wb') as f:
         pickle.dump(feature_bg, f)
 
-    with open(feature_path+'trigram_features', 'wb') as f:
+    with open(feature_path + 'trigram_features', 'wb') as f:
         pickle.dump(feature_tg, f)
 
 
@@ -589,5 +616,3 @@ if __name__ == "__main__":
     # kmeans.fit_transform(x)
     # print("labels: ", kmeans.labels_)
     # print_reviews(reviews)
-
-
