@@ -18,6 +18,21 @@ import pickle
 
 nltk.download('punkt')
 
+def read_business_info():
+    str_file_path = config.Project_CONFIG['business_file_path']
+    b_data = {}
+    file_json_data = open(str_file_path, 'r', encoding="utf8")
+    for line in enumerate(file_json_data):
+        dict_json_data = json.loads(line[1])
+        b_info = {}
+        b_id = dict_json_data['business_id']
+        b_info['city'] = dict_json_data['city']
+        b_info['state'] = dict_json_data['state']
+        b_info['lat'] = dict_json_data['latitude']
+        b_info['lon'] = dict_json_data['longitude']
+        b_info['categories'] = dict_json_data['categories']
+        b_data[b_id] = b_info
+    return b_data
 
 def read_reviews():
     reviews_path = config.Project_CONFIG['user_folder_path']
@@ -361,7 +376,7 @@ def avg_num_of_word_of_paragraph(text):
     return total_word / total_paragraph
 
 
-def feature_extract(text):
+def text_feature_extract(text):
     character_features_values = [total_number_of_character(text)] + [total_number_of_alpha_character(text)] \
                                 + [total_number_of_digit_character(text)] \
                                 + [total_number_of_upper_case_character(text)] \
@@ -596,8 +611,79 @@ def feature_proportion_trigram(text, features):
     return feature_pp
 
 
+def city_state_category_features():
+    b_data = read_business_info()
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    files = os.listdir(reviews_path)
+    city_list = []
+    state_list = []
+    cate_list = []
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                b_id = temp_json_data['business_id']
+                b_info = b_data[b_id]
+                if b_info['categories'] is not None:
+                    categories = b_info['categories'].split(',')
+                    cate_list.extend(categories)
+                city_list.append(b_info['city'])
+                state_list.append(b_info['state'])
+    city_set = sorted(list(set(city_list)))
+    state_set = sorted(list(set(state_list)))
+    cate_set = sorted(list(set(cate_list)))
+    return city_set + state_set + cate_set
+
+
+def feature_extract():
+    b_data = read_business_info()
+    other_features = city_state_category_features()
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    files = os.listdir(reviews_path)
+    labe_dataset = []
+    user_id = 0
+    feature_dataset = []
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                text = temp_json_data['text']
+                stars = temp_json_data['stars']
+                text_features = text_feature_extract(text)
+                feature_values = [0] * len(other_features)
+                b_id = temp_json_data['business_id']
+                b_info = b_data[b_id]
+                if b_info['categories'] is not None:
+                    categories = b_info['categories'].split(',')
+                    for category in categories:
+                        index = other_features.index(category)
+                        feature_values[index] = stars
+                city = b_info['city']
+                state = b_info['state']
+                c_index = other_features.index(city)
+                s_index = other_features.index(state)
+                feature_values[c_index] = 1
+                feature_values[s_index] = 1
+                all_features = text_features + feature_values
+                label = user_id
+                feature_dataset.append(all_features)
+                labe_dataset.append(label)
+        user_id += 1
+        print("{} : {}".format("user id", user_id))
+
+    with open(feature_path + 'feature_dataset', 'wb') as f:
+        pickle.dump(feature_dataset, f)
+
+    with open(feature_path + 'label_dataset', 'wb') as f:
+        pickle.dump(labe_dataset, f)
+
+
 if __name__ == "__main__":
-    reviews = read_reviews()
+    feature_extract()
+    # reviews = read_reviews()
     # features = {}
     # all_features = []
     # for review_idx in range(0, len(reviews)):

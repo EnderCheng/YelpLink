@@ -8,8 +8,9 @@ from utils import calc_avg_dist_similarity_score
 from utils import calc_avg_dist_similarity_score_different_users
 from utils import cal_similarity
 from utils import feature_distance
+from feature_extraction import read_business_info
 from feature_extraction import read_reviews
-from feature_extraction import feature_extract
+from feature_extraction import text_feature_extract
 from feature_extraction import load_word_features
 from feature_extraction import load_bigram_features
 from feature_extraction import load_trigram_features
@@ -36,23 +37,6 @@ def average_review_word_length():
         word_counts = len(re.findall(r'\w+', review_text))
         all_word_counts += word_counts
     return all_word_counts / len(reviews)
-
-
-def read_business_info():
-    str_file_path = config.Project_CONFIG['business_file_path']
-    b_data = {}
-    file_json_data = open(str_file_path, 'r', encoding="utf8")
-    for line in enumerate(file_json_data):
-        dict_json_data = json.loads(line[1])
-        b_info = {}
-        b_id = dict_json_data['business_id']
-        b_info['city'] = dict_json_data['city']
-        b_info['state'] = dict_json_data['state']
-        b_info['lat'] = dict_json_data['latitude']
-        b_info['lon'] = dict_json_data['longitude']
-        b_info['categories'] = dict_json_data['categories']
-        b_data[b_id] = b_info
-    return b_data
 
 
 def location_analysis():
@@ -255,7 +239,7 @@ def stylometry_analysis():
             file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
             for line in enumerate(file_json_data):
                 temp_json_data = json.loads(line[1])
-                features = feature_extract(temp_json_data['text'])
+                features = text_feature_extract(temp_json_data['text'])
                 all_user_features.append(features)
                 review_end += 1
             all_user_features_num.append([review_start, review_end])
