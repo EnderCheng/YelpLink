@@ -95,6 +95,8 @@ def total_number_of_words(text):
 
 
 def average_word_length(text):
+    if total_number_of_words(text) == 0:
+        return 0
     avg_word_len = total_number_of_alpha_character(text) / total_number_of_words(text)
     return avg_word_len
 
@@ -129,6 +131,8 @@ def hapax_legomenon(text):
         if freq[word] == 1:
             index += 1
     word_num = len(words)
+    if word_num == 0:
+        return 0
     val = index / word_num
     return val
 
@@ -143,6 +147,8 @@ def hapax_dislegomenon(text):
         if freq[word] == 2:
             index += 1
     word_num = len(words)
+    if word_num == 0:
+        return 0
     val = index / word_num
     return val
 
@@ -158,6 +164,8 @@ def honor_r_measure(text):
             index += 1
     word_number = len(words)
     unique_number = float(len(set(words)))
+    if unique_number == 0:
+        return 0
     r_value = 100 * math.log(word_number) / max(1, (1 - (index / unique_number)))
     return r_value
 
@@ -171,17 +179,21 @@ def sichel_measure(text):
     for word in freq:
         if freq[word] == 2:
             index += 1
+    if float(len(set(words))) == 0:
+        return 0
     s_value = index / float(len(set(words)))
     return s_value
 
 
-def brunets_w_measure(text):
-    words = re.findall(r'\w+', text)
-    a = 0.172
-    unique_word_number = float(len(set(words)))
-    word_number = len(words)
-    b_value = (unique_word_number - a) / (math.log10(word_number))
-    return b_value
+# def brunets_w_measure(text):
+#     words = re.findall(r'\w+', text)
+#     a = 0.172
+#     unique_word_number = float(len(set(words)))
+#     word_number = len(words)
+#     if word_number == 1:
+#         word_number += 1
+#     b_value = (unique_word_number - a) / (math.log10(word_number))
+#     return b_value
 
 
 def yule_k_characteristic(text):
@@ -192,6 +204,8 @@ def yule_k_characteristic(text):
     index = Counter()
     index.update(freq.values())
     m_value = sum([(value * value) * index[value] for key, value in freq.items()])
+    if word_number == 0:
+        return 0
     k_value = 10000 * (m_value - word_number) / math.pow(word_number, 2)
     return k_value
 
@@ -208,14 +222,14 @@ def shannon_entropy(text):
     return sh_value
 
 
-def simpson_index(text):
-    words = re.findall(r'\w+', text)
-    freq = Counter()
-    freq.update(words)
-    word_number = len(words)
-    n = sum([1.0 * i * (i - 1) for i in freq.values()])
-    d_value = 1 - (n / (word_number * (word_number - 1)))
-    return d_value
+# def simpson_index(text):
+#     words = re.findall(r'\w+', text)
+#     freq = Counter()
+#     freq.update(words)
+#     word_number = len(words)
+#     n = sum([1.0 * i * (i - 1) for i in freq.values()])
+#     d_value = 1 - (n / (word_number * (word_number - 1)))
+#     return d_value
 
 
 def word_len_freq_dist(text):
@@ -350,6 +364,8 @@ def avg_num_of_sentence_of_paragraph(text):
         paragraph = paragraphs[i]
         number_of_sentences = sent_tokenize(paragraph)
         total_sentence += len(number_of_sentences)
+    if total_paragraph == 0:
+        return 0
     return total_sentence / total_paragraph
 
 
@@ -361,6 +377,8 @@ def avg_num_of_character_of_paragraph(text):
         paragraph = paragraphs[i]
         number_of_character = len(paragraph)
         total_character += number_of_character
+    if total_paragraph == 0:
+        return 0
     return total_character / total_paragraph
 
 
@@ -372,6 +390,8 @@ def avg_num_of_word_of_paragraph(text):
         paragraph = paragraphs[i]
         number_of_word = len(re.findall(r'\w+', paragraph))
         total_word += number_of_word
+    if total_paragraph == 0:
+        return 0
     return total_word / total_paragraph
 
 
@@ -385,8 +405,8 @@ def text_feature_extract(text):
                            [total_number_of_short_words(text)] + \
                            [average_number_of_sentence_character(text)] + [average_number_of_sentence_word(text)] + \
                            [number_of_unique_words(text)] + [hapax_legomenon(text)] + [hapax_dislegomenon(text)] + \
-                           [honor_r_measure(text)] + [sichel_measure(text)] + [brunets_w_measure(text)] + \
-                           [yule_k_characteristic(text)] + [shannon_entropy(text)] + [simpson_index(text)] + \
+                           [honor_r_measure(text)] + [sichel_measure(text)] + \
+                           [yule_k_characteristic(text)] + [shannon_entropy(text)] + \
                            list(word_len_freq_dist(text))
 
     synatic_features_values = list(freq_of_puncuation(text)) + list(freq_of_func_words(text)) + \
@@ -596,6 +616,8 @@ def feature_proportion_bigram(text, features):
     feature_pp = []
     feature_count = bigram_feature_count(features, text)
     total_count = sum(feature_count.values())
+    if total_count == 0:
+        total_count = 1
     for value in feature_count.values():
         feature_pp.append(value * 1.00 / total_count)
     return feature_pp
@@ -605,6 +627,8 @@ def feature_proportion_trigram(text, features):
     feature_pp = []
     feature_count = trigram_feature_count(features, text)
     total_count = sum(feature_count.values())
+    if total_count == 0:
+        total_count = 1
     for value in feature_count.values():
         feature_pp.append(value * 1.00 / total_count)
     return feature_pp
@@ -636,6 +660,9 @@ def city_state_category_features():
 
 
 def feature_extract():
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    print(feature_path + 'feature_dataset_'+config.Project_CONFIG['feature_type'])
+    print(feature_path + 'label_dataset_'+config.Project_CONFIG['feature_type'])
     b_data = read_business_info()
     other_features = city_state_category_features()
     reviews_path = config.Project_CONFIG['user_folder_path']
@@ -671,7 +698,6 @@ def feature_extract():
                 label_dataset.append(label)
         user_id += 1
         print("{} : {}".format("Finished, user id", user_id))
-    feature_path = config.Project_CONFIG['feature_folder_path']
 
     if not os.path.exists(feature_path):
         os.makedirs(feature_path)

@@ -98,7 +98,7 @@ def number_of_review_records():
 
 
 if __name__ == "__main__":
-    # random_choose_dataset(100, 50, 100)
-    print(min(number_of_review_records()))
+    random_choose_dataset(1000, 100, 1000)
+    # print(min(number_of_review_records()))
     # parse_raw_json_file(config.Project_CONFIG['review_file_path'])
 
