@@ -3,6 +3,8 @@ import config
 import os
 import pickle
 import random
+import statistics
+from feature_extraction import total_number_of_words
 
 
 def aggregate_user_review(review_record):
@@ -86,19 +88,71 @@ def random_choose_dataset(user_num, min_reviews, max_reviews):
     return True
 
 
-def number_of_review_records():
-    users = []
-    reviews_path_temp = config.Project_CONFIG['user_folder_path']
-    files_temp = os.listdir(reviews_path_temp)
-    for user_file_temp in files_temp:
-        if not os.path.isdir(user_file_temp):
-            lines = sum(1 for line in open(reviews_path_temp + user_file_temp, 'r', encoding="utf8"))
-        users.append(lines)
-    return users
+# def number_of_review_records():
+#     users = []
+#     reviews_path_temp = config.Project_CONFIG['user_folder_path']
+#     files_temp = os.listdir(reviews_path_temp)
+#     for user_file_temp in files_temp:
+#         if not os.path.isdir(user_file_temp):
+#             lines = sum(1 for line in open(reviews_path_temp + user_file_temp, 'r', encoding="utf8"))
+#         users.append(lines)
+#     return users
+
+
+def dataset_statistic():
+    user_num = 0
+    user_list = []
+    user_num_dict = {}
+    file_json_data = open(config.Project_CONFIG['user_file_path'], 'r', encoding='utf8')
+    for line in enumerate(file_json_data):
+        dict_json_data = json.loads(line[1])
+        user_num += 1
+        user_list.append(dict_json_data['user_id'])
+
+    for user in user_list:
+        user_num_dict[user] = 0
+
+    review_num = 0
+    word_count_list = []
+    file_review_data = open(config.Project_CONFIG['review_file_path'], 'r', encoding='utf8')
+    for line in enumerate(file_review_data):
+        dict_json_data = json.loads(line[1])
+        review_num += 1
+        user_num_dict[dict_json_data['user_id']] += 1
+        word_count_list.append(total_number_of_words(dict_json_data['text']))
+
+    print('user number:')
+    print(user_num)
+
+    user_num_list = list(user_num_dict.values())
+    max_value = max(user_num_list)
+    min_value = min(user_num_list)
+    avg_value = sum(user_num_list) / len(user_num_list)
+    stdv_value = statistics.stdev(user_num_list)
+
+    print('user reviews max, min, avg, stdv:')
+    print(max_value)
+    print(min_value)
+    print(avg_value)
+    print(stdv_value)
+
+    print('review number:')
+    print(review_num)
+
+    max_value_word = max(word_count_list)
+    min_value_word = min(word_count_list)
+    avg_value_word = sum(word_count_list) / len(word_count_list)
+    stdv_value_word = statistics.stdev(word_count_list)
+
+    print('word count max, min, avg, stdv:')
+    print(max_value_word)
+    print(min_value_word)
+    print(avg_value_word)
+    print(stdv_value_word)
 
 
 if __name__ == "__main__":
+    # dataset_statistic
     random_choose_dataset(1000, 100, 1000)
     # print(min(number_of_review_records()))
     # parse_raw_json_file(config.Project_CONFIG['review_file_path'])
-
