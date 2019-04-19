@@ -10,13 +10,11 @@ import nltk
 import scipy.stats
 from utils import permutation_bigram
 from utils import permutation_trigram
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-from nltk.corpus import stopwords
 import pickle
+import shutil
 
 nltk.download('punkt')
+
 
 def read_business_info():
     str_file_path = config.Project_CONFIG['business_file_path']
@@ -33,6 +31,7 @@ def read_business_info():
         b_info['categories'] = dict_json_data['categories']
         b_data[b_id] = b_info
     return b_data
+
 
 def read_reviews():
     reviews_path = config.Project_CONFIG['user_folder_path']
@@ -524,64 +523,64 @@ def bag_of_word_features_extract_user():
     return user_features
 
 
-def bag_of_word_features_extract():
-    reviews_path = config.Project_CONFIG['user_folder_path']
-    feature_path = config.Project_CONFIG['feature_folder_path']
-    if not os.path.exists(config.Project_CONFIG['feature_folder_path']):
-        os.makedirs(config.Project_CONFIG['feature_folder_path'])
-    files = os.listdir(reviews_path)
-    comment_text = ''
-    print('load the reviews')
-    for user_file in files:
-        if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
-            for line in enumerate(file_json_data):
-                temp_json_data = json.loads(line[1])
-                comment_text += temp_json_data['text']
-    print('loading finish')
-
-    print('start extracting word features')
-    temp_feature_w = word_features(comment_text)
-
-    print('start extracting bigram features')
-    temp_feature_bg = bigram_features(comment_text)
-
-    print('start extracting unigram features')
-    temp_feature_tg = trigram_features(comment_text)
-
-    feature_w = sorted(temp_feature_w)
-    feature_bg = sorted(temp_feature_bg)
-    feature_tg = sorted(temp_feature_tg)
-
-    with open(feature_path + 'word_features', 'wb') as f:
-        pickle.dump(feature_w, f)
-
-    with open(feature_path + 'bigram_features', 'wb') as f:
-        pickle.dump(feature_bg, f)
-
-    with open(feature_path + 'trigram_features', 'wb') as f:
-        pickle.dump(feature_tg, f)
-
-
-def load_word_features():
-    feature_path = config.Project_CONFIG['feature_folder_path']
-    with open(feature_path + 'word_features', 'rb') as f:
-        feature_w = pickle.load(f)
-        return feature_w
+# def bag_of_word_features_extract():
+#     reviews_path = config.Project_CONFIG['user_folder_path']
+#     feature_path = config.Project_CONFIG['feature_folder_path']
+#     if not os.path.exists(config.Project_CONFIG['feature_folder_path']):
+#         os.makedirs(config.Project_CONFIG['feature_folder_path'])
+#     files = os.listdir(reviews_path)
+#     comment_text = ''
+#     print('load the reviews')
+#     for user_file in files:
+#         if not os.path.isdir(user_file):
+#             file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+#             for line in enumerate(file_json_data):
+#                 temp_json_data = json.loads(line[1])
+#                 comment_text += temp_json_data['text']
+#     print('loading finish')
+#
+#     print('start extracting word features')
+#     temp_feature_w = word_features(comment_text)
+#
+#     print('start extracting bigram features')
+#     temp_feature_bg = bigram_features(comment_text)
+#
+#     print('start extracting unigram features')
+#     temp_feature_tg = trigram_features(comment_text)
+#
+#     feature_w = sorted(temp_feature_w)
+#     feature_bg = sorted(temp_feature_bg)
+#     feature_tg = sorted(temp_feature_tg)
+#
+#     with open(feature_path + 'word_features', 'wb') as f:
+#         pickle.dump(feature_w, f)
+#
+#     with open(feature_path + 'bigram_features', 'wb') as f:
+#         pickle.dump(feature_bg, f)
+#
+#     with open(feature_path + 'trigram_features', 'wb') as f:
+#         pickle.dump(feature_tg, f)
 
 
-def load_bigram_features():
-    feature_path = config.Project_CONFIG['feature_folder_path']
-    with open(feature_path + 'bigram_features', 'rb') as f:
-        feature_bg = pickle.load(f)
-        return feature_bg
-
-
-def load_trigram_features():
-    feature_path = config.Project_CONFIG['feature_folder_path']
-    with open(feature_path + 'trigram_features', 'rb') as f:
-        feature_tg = pickle.load(f)
-        return feature_tg
+# def load_word_features():
+#     feature_path = config.Project_CONFIG['feature_folder_path']
+#     with open(feature_path + 'word_features', 'rb') as f:
+#         feature_w = pickle.load(f)
+#         return feature_w
+#
+#
+# def load_bigram_features():
+#     feature_path = config.Project_CONFIG['feature_folder_path']
+#     with open(feature_path + 'bigram_features', 'rb') as f:
+#         feature_bg = pickle.load(f)
+#         return feature_bg
+#
+#
+# def load_trigram_features():
+#     feature_path = config.Project_CONFIG['feature_folder_path']
+#     with open(feature_path + 'trigram_features', 'rb') as f:
+#         feature_tg = pickle.load(f)
+#         return feature_tg
 
 
 def feature_proportion_word(text, features):
@@ -640,9 +639,8 @@ def feature_extract():
     b_data = read_business_info()
     other_features = city_state_category_features()
     reviews_path = config.Project_CONFIG['user_folder_path']
-    feature_path = config.Project_CONFIG['feature_folder_path']
     files = os.listdir(reviews_path)
-    labe_dataset = []
+    label_dataset = []
     user_id = 0
     feature_dataset = []
     for user_file in files:
@@ -670,18 +668,25 @@ def feature_extract():
                 all_features = text_features + feature_values
                 label = user_id
                 feature_dataset.append(all_features)
-                labe_dataset.append(label)
+                label_dataset.append(label)
         user_id += 1
-        print("{} : {}".format("user id", user_id))
+        print("{} : {}".format("Finished, user id", user_id))
+    feature_path = config.Project_CONFIG['feature_folder_path']
 
-    with open(feature_path + 'feature_dataset', 'wb') as f:
+    if not os.path.exists(feature_path):
+        os.makedirs(feature_path)
+
+    with open(feature_path + 'feature_dataset_'+config.Project_CONFIG['feature_type'], 'wb') as f:
         pickle.dump(feature_dataset, f)
 
-    with open(feature_path + 'label_dataset', 'wb') as f:
-        pickle.dump(labe_dataset, f)
+    with open(feature_path + 'label_dataset_'+config.Project_CONFIG['feature_type'], 'wb') as f:
+        pickle.dump(label_dataset, f)
 
 
 if __name__ == "__main__":
+    feature_path_e = config.Project_CONFIG['feature_folder_path']
+    if os.path.exists(feature_path_e):
+        shutil.rmtree(feature_path_e)
     feature_extract()
     # reviews = read_reviews()
     # features = {}

@@ -20,6 +20,7 @@ from scipy.spatial.distance import euclidean
 #     M = M + np.spacing(1)
 #     return 0.5 * kld(p, M) + 0.5 * kld(q, M)
 
+
 def all_combination(length):
     array = range(length)
     return list(itertools.combinations(array, 2))

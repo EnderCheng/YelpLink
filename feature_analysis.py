@@ -5,23 +5,17 @@ import os
 import datetime
 from utils import calc_distance
 from utils import calc_avg_dist_similarity_score
-from utils import calc_avg_dist_similarity_score_different_users
 from utils import cal_similarity
 from utils import feature_distance
 from feature_extraction import read_business_info
 from feature_extraction import read_reviews
 from feature_extraction import text_feature_extract
-from feature_extraction import load_word_features
-from feature_extraction import load_bigram_features
-from feature_extraction import load_trigram_features
 from feature_extraction import feature_proportion_word
 from feature_extraction import feature_proportion_bigram
 from feature_extraction import feature_proportion_trigram
-from feature_extraction import bag_of_word_features_extract
 from feature_extraction import bag_of_word_features_extract_user
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
-# from sklearn.preprocessing import StandardScaler
 
 
 def average_review_length_per_user(user_number):
@@ -372,127 +366,126 @@ def bag_of_word_analysis_user():
     print([(x + y + z) / 3 for x, y, z in zip(word_values, bigram_values, trigram_values)])
 
 
-def bag_of_word_analysis():
-    bag_of_word_features_extract()
-    reviews_path = config.Project_CONFIG['user_folder_path']
-    files = os.listdir(reviews_path)
-    # load features
-    features_word = load_word_features()
-    features_bigram = load_bigram_features()
-    features_trigram = load_trigram_features()
-
-    word_values_same_user = []
-    bigram_values_same_user = []
-    trigram_values_same_user = []
-
-    word_values_same_user_w = []
-    bigram_values_same_user_w = []
-    trigram_values_same_user_w = []
-
-    word_values = []
-    bigram_values = []
-    trigram_values = []
-
-    word_values_w = []
-    bigram_values_w = []
-    trigram_values_w = []
-
-    users_list_features_word_prop = []
-    users_list_features_bigram_prop = []
-    users_list_features_trigram_prop = []
-
-    all_users_features_whole_word_prop = []
-    all_users_features_whole_bigram_prop = []
-    all_users_features_whole_trigram_prop = []
-
-    for user_file in files:
-        user_text = ''
-        if not os.path.isdir(user_file):
-            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
-            user_features_word_prop = []
-            user_features_bigram_prop = []
-            user_features_trigram_prop = []
-            for line in enumerate(file_json_data):
-                temp_json_data = json.loads(line[1])
-                user_text += temp_json_data['text']
-                feature_word_prop = feature_proportion_word(temp_json_data['text'], features_word)
-                feature_bigram_prop = feature_proportion_bigram(temp_json_data['text'], features_bigram)
-                feature_trigram_prop = feature_proportion_trigram(temp_json_data['text'], features_trigram)
-
-                user_features_word_prop.append(feature_word_prop)
-                user_features_bigram_prop.append(feature_bigram_prop)
-                user_features_trigram_prop.append(feature_trigram_prop)
-
-            users_list_features_word_prop.append(user_features_word_prop)
-            users_list_features_bigram_prop.append(user_features_bigram_prop)
-            users_list_features_trigram_prop.append(user_features_trigram_prop)
-
-            user_features_whole_word_prop = feature_proportion_word(user_text, features_word)
-            user_features_whole_bigram_prop = feature_proportion_bigram(user_text, features_bigram)
-            user_features_whole_trigram_prop = feature_proportion_trigram(user_text, features_trigram)
-
-            # distribution similarity between a users' whole distribution and each review's distribution (average)
-            avg_score_word = calc_avg_dist_similarity_score(user_features_word_prop,
-                                                            user_features_whole_word_prop)
-            avg_score_bigram = calc_avg_dist_similarity_score(user_features_bigram_prop,
-                                                              user_features_whole_bigram_prop)
-            avg_score_trigram = calc_avg_dist_similarity_score(user_features_trigram_prop,
-                                                               user_features_whole_trigram_prop)
-
-            word_values_same_user.append(avg_score_word[0])
-            bigram_values_same_user.append(avg_score_bigram[0])
-            trigram_values_same_user.append(avg_score_trigram[0])
-
-            word_values_same_user_w.append(avg_score_word[1])
-            bigram_values_same_user_w.append(avg_score_bigram[1])
-            trigram_values_same_user_w.append(avg_score_trigram[1])
-
-            all_users_features_whole_word_prop.append(user_features_whole_word_prop)
-            all_users_features_whole_bigram_prop.append(user_features_whole_bigram_prop)
-            all_users_features_whole_trigram_prop.append(user_features_whole_trigram_prop)
-
-    # distribution similarity between one user and all other users (average)
-    for i in range(0, len(users_list_features_word_prop)):
-        avg_score_word = calc_avg_dist_similarity_score_different_users(users_list_features_word_prop[i],
-                                                                        all_users_features_whole_word_prop, i)
-        word_values.append(avg_score_word[0])
-        word_values_w.append(avg_score_word[1])
-
-    for i in range(0, len(users_list_features_bigram_prop)):
-        avg_score_bigram = calc_avg_dist_similarity_score_different_users(users_list_features_bigram_prop[i],
-                                                                          all_users_features_whole_bigram_prop, i)
-        bigram_values.append(avg_score_bigram[0])
-        bigram_values_w.append(avg_score_bigram[1])
-
-    for i in range(0, len(users_list_features_word_prop)):
-        avg_score_trigram = calc_avg_dist_similarity_score_different_users(users_list_features_trigram_prop[i],
-                                                                           all_users_features_whole_trigram_prop, i)
-        trigram_values.append(avg_score_trigram[0])
-        trigram_values_w.append(avg_score_trigram[1])
-
-        # word_values.append(avg_score_word[0])
-        # bigram_values.append(avg_score_bigram[0])
-        # trigram_values.append(avg_score_trigram[0])
-        #
-        # word_values_w.append(avg_score_word[1])
-        # bigram_values_w.append(avg_score_bigram[1])
-        # trigram_values_w.append(avg_score_trigram[1])
-
-    # print word_values_same_user
-    # print bigram_values_same_user
-    # print trigram_values_same_user
-    # #
-    # print word_values
-    # print bigram_values
-    # print trigram_values
-    print([(x + y + z)/3 for x, y, z in zip(word_values_same_user, bigram_values_same_user, trigram_values_same_user)])
-    print([(x + y + z)/3 for x, y, z in zip(word_values, bigram_values, trigram_values)])
+# def bag_of_word_analysis():
+#     bag_of_word_features_extract()
+#     reviews_path = config.Project_CONFIG['user_folder_path']
+#     files = os.listdir(reviews_path)
+#     # load features
+#     features_word = load_word_features()
+#     features_bigram = load_bigram_features()
+#     features_trigram = load_trigram_features()
+#
+#     word_values_same_user = []
+#     bigram_values_same_user = []
+#     trigram_values_same_user = []
+#
+#     word_values_same_user_w = []
+#     bigram_values_same_user_w = []
+#     trigram_values_same_user_w = []
+#
+#     word_values = []
+#     bigram_values = []
+#     trigram_values = []
+#
+#     word_values_w = []
+#     bigram_values_w = []
+#     trigram_values_w = []
+#
+#     users_list_features_word_prop = []
+#     users_list_features_bigram_prop = []
+#     users_list_features_trigram_prop = []
+#
+#     all_users_features_whole_word_prop = []
+#     all_users_features_whole_bigram_prop = []
+#     all_users_features_whole_trigram_prop = []
+#
+#     for user_file in files:
+#         user_text = ''
+#         if not os.path.isdir(user_file):
+#             file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+#             user_features_word_prop = []
+#             user_features_bigram_prop = []
+#             user_features_trigram_prop = []
+#             for line in enumerate(file_json_data):
+#                 temp_json_data = json.loads(line[1])
+#                 user_text += temp_json_data['text']
+#                 feature_word_prop = feature_proportion_word(temp_json_data['text'], features_word)
+#                 feature_bigram_prop = feature_proportion_bigram(temp_json_data['text'], features_bigram)
+#                 feature_trigram_prop = feature_proportion_trigram(temp_json_data['text'], features_trigram)
+#
+#                 user_features_word_prop.append(feature_word_prop)
+#                 user_features_bigram_prop.append(feature_bigram_prop)
+#                 user_features_trigram_prop.append(feature_trigram_prop)
+#
+#             users_list_features_word_prop.append(user_features_word_prop)
+#             users_list_features_bigram_prop.append(user_features_bigram_prop)
+#             users_list_features_trigram_prop.append(user_features_trigram_prop)
+#
+#             user_features_whole_word_prop = feature_proportion_word(user_text, features_word)
+#             user_features_whole_bigram_prop = feature_proportion_bigram(user_text, features_bigram)
+#             user_features_whole_trigram_prop = feature_proportion_trigram(user_text, features_trigram)
+#
+#             # distribution similarity between a users' whole distribution and each review's distribution (average)
+#             avg_score_word = calc_avg_dist_similarity_score(user_features_word_prop,
+#                                                             user_features_whole_word_prop)
+#             avg_score_bigram = calc_avg_dist_similarity_score(user_features_bigram_prop,
+#                                                               user_features_whole_bigram_prop)
+#             avg_score_trigram = calc_avg_dist_similarity_score(user_features_trigram_prop,
+#                                                                user_features_whole_trigram_prop)
+#
+#             word_values_same_user.append(avg_score_word[0])
+#             bigram_values_same_user.append(avg_score_bigram[0])
+#             trigram_values_same_user.append(avg_score_trigram[0])
+#
+#             word_values_same_user_w.append(avg_score_word[1])
+#             bigram_values_same_user_w.append(avg_score_bigram[1])
+#             trigram_values_same_user_w.append(avg_score_trigram[1])
+#
+#             all_users_features_whole_word_prop.append(user_features_whole_word_prop)
+#             all_users_features_whole_bigram_prop.append(user_features_whole_bigram_prop)
+#             all_users_features_whole_trigram_prop.append(user_features_whole_trigram_prop)
+#
+#     # distribution similarity between one user and all other users (average)
+#     for i in range(0, len(users_list_features_word_prop)):
+#         avg_score_word = calc_avg_dist_similarity_score_different_users(users_list_features_word_prop[i],
+#                                                                         all_users_features_whole_word_prop, i)
+#         word_values.append(avg_score_word[0])
+#         word_values_w.append(avg_score_word[1])
+#
+#     for i in range(0, len(users_list_features_bigram_prop)):
+#         avg_score_bigram = calc_avg_dist_similarity_score_different_users(users_list_features_bigram_prop[i],
+#                                                                           all_users_features_whole_bigram_prop, i)
+#         bigram_values.append(avg_score_bigram[0])
+#         bigram_values_w.append(avg_score_bigram[1])
+#
+#     for i in range(0, len(users_list_features_word_prop)):
+#         avg_score_trigram = calc_avg_dist_similarity_score_different_users(users_list_features_trigram_prop[i],
+#                                                                            all_users_features_whole_trigram_prop, i)
+#         trigram_values.append(avg_score_trigram[0])
+#         trigram_values_w.append(avg_score_trigram[1])
+#
+#         # word_values.append(avg_score_word[0])
+#         # bigram_values.append(avg_score_bigram[0])
+#         # trigram_values.append(avg_score_trigram[0])
+#         #
+#         # word_values_w.append(avg_score_word[1])
+#         # bigram_values_w.append(avg_score_bigram[1])
+#         # trigram_values_w.append(avg_score_trigram[1])
+#
+#     # print word_values_same_user
+#     # print bigram_values_same_user
+#     # print trigram_values_same_user
+#     # #
+#     # print word_values
+#     # print bigram_values
+#     # print trigram_values
+#     print([(x + y + z)/3 for x, y, z in zip(word_values_same_user, bigram_values_same_user, trigram_values_same_user)])
+#     print([(x + y + z)/3 for x, y, z in zip(word_values, bigram_values, trigram_values)])
 
 
 if __name__ == "__main__":
     location_analysis()
     category_analysis()
     timestamp_analysis()
-    # bag_of_word_analysis()
     bag_of_word_analysis_user()
     stylometry_analysis()
