@@ -746,7 +746,7 @@ if __name__ == "__main__":
     feature_path_e = config.Project_CONFIG['feature_folder_path']
     if os.path.exists(feature_path_e):
         shutil.rmtree(feature_path_e)
-    feature_extract_part()
+    feature_extract()
     # reviews = read_reviews()
     # features = {}
     # all_features = []

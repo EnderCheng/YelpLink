@@ -20,25 +20,21 @@ def classification_svm(num_t):
     x = scaler.fit_transform(x)
     t = scaler.transform(t)
 
-    print("scaler finish")
     pca = PCA(n_components=0.999)
     x_components = pca.fit_transform(x)
     t_components = pca.transform(t)
-    print("pca finish")
 
     dual = True
     if x_components.shape[0] > x_components.shape[1]:
         dual = False
 
-    lsvc = LinearSVC(random_state=0, dual=dual)
+    lsvc = LinearSVC(random_state=0, max_iter=2000, dual=dual)
     lsvc.fit(x_components, y)
     ret = lsvc.predict(t_components)
     accuracy = lsvc.score(t_components, real)
-    print("svm")
     print(accuracy)
 
 
 if __name__ == "__main__":
     for user_n in range(10, 110, 10):
-        print(user_n)
         classification_svm(user_n)

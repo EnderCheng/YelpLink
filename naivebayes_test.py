@@ -15,20 +15,14 @@ def classification_nb(num_t):
     print(t.shape)
 
     gnb = GaussianNB()
-    print("start fit")
     gnb.fit(x, y)
-    print("end fit")
-    print("start predict")
     ret = gnb.predict(t)
-    print("end predict")
     accuracy = gnb.score(t, real)
-    print("naive bayes")
     print(accuracy)
 
 
 if __name__ == "__main__":
     for user_n in range(10, 110, 10):
-        print(user_n)
         classification_nb(user_n)
 
 
