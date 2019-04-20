@@ -659,6 +659,39 @@ def city_state_category_features():
     return city_set + state_set + cate_set
 
 
+def feature_extract_part():
+    feature_path = config.Project_CONFIG['feature_folder_path']
+    print(feature_path + 'feature_dataset_'+config.Project_CONFIG['feature_type'])
+    print(feature_path + 'label_dataset_'+config.Project_CONFIG['feature_type'])
+    reviews_path = config.Project_CONFIG['user_folder_path']
+    files = os.listdir(reviews_path)
+    label_dataset = []
+    user_id = 0
+    feature_dataset = []
+    for user_file in files:
+        if not os.path.isdir(user_file):
+            file_json_data = open(reviews_path + user_file, 'r', encoding="utf8")
+            for line in enumerate(file_json_data):
+                temp_json_data = json.loads(line[1])
+                text = temp_json_data['text']
+                text_features = text_feature_extract(text)
+                all_features = text_features
+                label = user_id
+                feature_dataset.append(all_features)
+                label_dataset.append(label)
+        user_id += 1
+        print("{} : {}".format("Finished, user id", user_id))
+
+    if not os.path.exists(feature_path):
+        os.makedirs(feature_path)
+
+    with open(feature_path + 'feature_dataset_text_'+config.Project_CONFIG['feature_type'], 'wb') as f:
+        pickle.dump(feature_dataset, f)
+
+    with open(feature_path + 'label_dataset_text_'+config.Project_CONFIG['feature_type'], 'wb') as f:
+        pickle.dump(label_dataset, f)
+
+
 def feature_extract():
     feature_path = config.Project_CONFIG['feature_folder_path']
     print(feature_path + 'feature_dataset_'+config.Project_CONFIG['feature_type'])
