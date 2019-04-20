@@ -153,6 +153,6 @@ def dataset_statistic():
 
 if __name__ == "__main__":
     # dataset_statistic()
-    random_choose_dataset(1000, 100, 1000)
+    random_choose_dataset(100, 100, 110)
     # print(min(number_of_review_records()))
     # parse_raw_json_file(config.Project_CONFIG['review_file_path'])
