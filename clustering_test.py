@@ -27,7 +27,10 @@ def gap_num(num_user):
     components = pca.fit_transform(x)
     gaps, sk, kk = gap_statistic(components, K=range(1, num_user))
     print("gap_statistic")
-    print(abs(find_optimal_k(gaps, sk, kk) - num_user))
+    opt_k = find_optimal_k(gaps, sk, kk)
+    print(opt_k)
+    print(num_user)
+    print(abs(opt_k - num_user))
 
 
 def cluster_kmeans(num_k):
@@ -79,7 +82,7 @@ def cluster_hac(num_k):
 
 
 if __name__ == "__main__":
-    for user_n in range(2, 21):
+    for user_n in range(2, 10):
         gap_num(user_n)
 
     for user_n in range(10, 110, 10):
