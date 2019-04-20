@@ -661,8 +661,8 @@ def city_state_category_features():
 
 def feature_extract_part():
     feature_path = config.Project_CONFIG['feature_folder_path']
-    print(feature_path + 'feature_dataset_'+config.Project_CONFIG['feature_type'])
-    print(feature_path + 'label_dataset_'+config.Project_CONFIG['feature_type'])
+    print(feature_path + 'feature_dataset_text_'+config.Project_CONFIG['feature_type'])
+    print(feature_path + 'label_dataset_text_'+config.Project_CONFIG['feature_type'])
     reviews_path = config.Project_CONFIG['user_folder_path']
     files = os.listdir(reviews_path)
     label_dataset = []
@@ -746,7 +746,7 @@ if __name__ == "__main__":
     feature_path_e = config.Project_CONFIG['feature_folder_path']
     if os.path.exists(feature_path_e):
         shutil.rmtree(feature_path_e)
-    feature_extract()
+    feature_extract_part()
     # reviews = read_reviews()
     # features = {}
     # all_features = []

@@ -11,11 +11,11 @@ from sklearn.metrics.cluster import fowlkes_mallows_score
 
 def gap_num(num_user):
     feature_ds, label_ds = read_dataset()
-    user_max_id = num_user - 1
 
+    user_max_id = num_user - 1
     sub_feature_ds = []
     for i in range(0, len(label_ds)):
-        if label_ds <= user_max_id:
+        if label_ds[i] <= user_max_id:
             sub_feature_ds.append(feature_ds[i])
 
     feature_array = np.array(sub_feature_ds)
@@ -26,12 +26,22 @@ def gap_num(num_user):
     pca = PCA(n_components=0.999)
     components = pca.fit_transform(x)
     gaps, sk, kk = gap_statistic(components, K=range(1, num_user))
-    print(find_optimal_k(gaps, sk, kk) - num_user)
+    print("gap_statistic")
+    print(abs(find_optimal_k(gaps, sk, kk) - num_user))
 
 
 def cluster_kmeans(num_k):
     feature_ds, label_ds = read_dataset()
-    feature_array = np.array(feature_ds)
+
+    user_max_id = num_k - 1
+    sub_feature_ds = []
+    sub_label_ds = []
+    for i in range(0, len(label_ds)):
+        if label_ds[i] <= user_max_id:
+            sub_feature_ds.append(feature_ds[i])
+            sub_label_ds.append(label_ds[i])
+
+    feature_array = np.array(sub_feature_ds)
 
     x_scalar = StandardScaler()
     x = x_scalar.fit_transform(feature_array)
@@ -40,12 +50,22 @@ def cluster_kmeans(num_k):
     components = pca.fit_transform(x)
     kmeans = KMeans(n_clusters=num_k, random_state=0)
     kmeans.fit_predict(components)
-    print(fowlkes_mallows_score(kmeans.labels_, label_ds))
+    print("kmeans")
+    print(fowlkes_mallows_score(kmeans.labels_, sub_label_ds))
 
 
 def cluster_hac(num_k):
     feature_ds, label_ds = read_dataset()
-    feature_array = np.array(feature_ds)
+
+    user_max_id = num_k - 1
+    sub_feature_ds = []
+    sub_label_ds = []
+    for i in range(0, len(label_ds)):
+        if label_ds[i] <= user_max_id:
+            sub_feature_ds.append(feature_ds[i])
+            sub_label_ds.append(label_ds[i])
+
+    feature_array = np.array(sub_feature_ds)
 
     x_scalar = StandardScaler()
     x = x_scalar.fit_transform(feature_array)
@@ -54,10 +74,14 @@ def cluster_hac(num_k):
     components = pca.fit_transform(x)
     hac = AgglomerativeClustering(n_clusters=num_k, linkage='average')
     hac.fit_predict(components)
-    print(fowlkes_mallows_score(hac.labels_, label_ds))
+    print("HAC")
+    print(fowlkes_mallows_score(hac.labels_, sub_label_ds))
 
 
 if __name__ == "__main__":
-    gap_num()
-    cluster_hac(100)
-    cluster_kmeans(100)
+    for user_n in range(2, 21):
+        gap_num(user_n)
+
+    for user_n in range(10, 110, 10):
+        cluster_hac(user_n)
+        cluster_kmeans(user_n)

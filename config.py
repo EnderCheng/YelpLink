@@ -5,5 +5,5 @@ Project_CONFIG = {
     'user_folder_path': 'C:/Yelpdataset/users_review/',
     'feature_folder_path': 'C:/Yelpdataset/features/',
     'temp_folder_path': 'C:/Yelpdataset/Temp/',
-    'feature_type': '500'
+    'feature_type': '300'
 }

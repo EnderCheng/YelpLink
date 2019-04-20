@@ -19,6 +19,7 @@ def classification_nb(num_t):
     gnb.fit(x, y)
     ret = gnb.predict(t)
     accuracy = gnb.score(t, real)
+    print("naive bayes")
     print(accuracy)
 
 
@@ -33,12 +34,10 @@ def classification_svm(num_t):
     scaler = StandardScaler()
     x = scaler.fit_transform(x)
     t = scaler.transform(t)
-    print('Scaling finish')
 
     pca = PCA(n_components=0.999)
     x_components = pca.fit_transform(x)
     t_components = pca.transform(t)
-    print('PCA finish')
 
     dual = True
     if x_components.shape[0] > x_components.shape[1]:
@@ -48,6 +47,7 @@ def classification_svm(num_t):
     lsvc.fit(x_components, y)
     ret = lsvc.predict(t_components)
     accuracy = lsvc.score(t_components, real)
+    print("svm")
     print(accuracy)
 
 
@@ -62,23 +62,25 @@ def classification_randomforest(num_t):
     scaler = StandardScaler()
     x = scaler.fit_transform(x)
     t = scaler.transform(t)
-    print('Scaling finish')
 
     pca = PCA(n_components=0.999)
     x_components = pca.fit_transform(x)
     t_components = pca.transform(t)
-    print('PCA finish')
 
     rfc = RandomForestClassifier(n_estimators=1000, random_state=0, n_jobs=-1)
     rfc.fit(x_components, y)
     ret = rfc.predict(t_components)
     accuracy = rfc.score(t_components, real)
+    print("random forest")
     print(accuracy)
 
 
 if __name__ == "__main__":
-    # classification_nb(50)
-    # classification_svm(50)
-    classification_randomforest(50)
+    for user_n in range(10, 110, 10):
+        print(user_n)
+        classification_nb(user_n)
+        classification_svm(user_n)
+        classification_randomforest(user_n)
+
 
 
