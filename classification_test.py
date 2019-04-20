@@ -15,9 +15,16 @@ def classification_nb(num_t):
     t = np.array(test_dataset)
     real = np.array(test_label)
 
+    print(x.shape)
+    print(t.shape)
+
     gnb = GaussianNB()
+    print("start fit")
     gnb.fit(x, y)
+    print("end fit")
+    print("start predict")
     ret = gnb.predict(t)
+    print("end predict")
     accuracy = gnb.score(t, real)
     print("naive bayes")
     print(accuracy)
@@ -31,13 +38,18 @@ def classification_svm(num_t):
     t = np.array(test_dataset)
     real = np.array(test_label)
 
+    print(x.shape)
+    print(t.shape)
+
     scaler = StandardScaler()
     x = scaler.fit_transform(x)
     t = scaler.transform(t)
 
+    print("scaler finish")
     pca = PCA(n_components=0.999)
     x_components = pca.fit_transform(x)
     t_components = pca.transform(t)
+    print("pca finish")
 
     dual = True
     if x_components.shape[0] > x_components.shape[1]:
@@ -79,8 +91,8 @@ if __name__ == "__main__":
     for user_n in range(10, 110, 10):
         print(user_n)
         classification_nb(user_n)
-        classification_svm(user_n)
-        classification_randomforest(user_n)
+        # classification_svm(user_n)
+        # classification_randomforest(user_n)
 
 
 
