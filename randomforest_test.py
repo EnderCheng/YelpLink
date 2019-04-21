@@ -24,7 +24,7 @@ def classification_randomforest(num_t):
     x_components = pca.fit_transform(x)
     t_components = pca.transform(t)
 
-    rfc = RandomForestClassifier(n_estimators=10000, random_state=0, n_jobs=2)
+    rfc = RandomForestClassifier(n_estimators=1000, random_state=0, n_jobs=2)
     rfc.fit(x_components, y)
     ret = rfc.predict(t_components)
     accuracy = rfc.score(t_components, real)

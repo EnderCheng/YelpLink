@@ -35,3 +35,4 @@ def gap_num(num_user):
 if __name__ == "__main__":
     for user_n in range(2, 10):
         gap_num(user_n)
+        print('--------')

@@ -28,7 +28,7 @@ def classification_svm(num_t):
     if x_components.shape[0] > x_components.shape[1]:
         dual = False
 
-    lsvc = LinearSVC(random_state=0, max_iter=2000, dual=dual)
+    lsvc = LinearSVC(random_state=0, max_iter=1000, dual=dual)
     lsvc.fit(x_components, y)
     ret = lsvc.predict(t_components)
     accuracy = lsvc.score(t_components, real)
